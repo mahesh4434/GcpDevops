@@ -1,6 +1,6 @@
 terraform {
   backend "gcs" {
-    bucket = "devopsbackup2"
+    bucket = "gkestandardbackup"
     prefix = "terraform.tfstate"
   }
 }
