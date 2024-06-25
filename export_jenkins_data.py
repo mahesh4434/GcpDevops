@@ -27,8 +27,8 @@ for build in builds:
         'timestamp': build_info['timestamp']
     })
 
-# Save build data to a JSON file
-output_file = 'jenkins_build_data.json'
+# Save build data to a JSON file in D:\New folder\POC
+output_file = r'D:\New folder\POC\jenkins_build_data.json'
 with open(output_file, 'w') as f:
     json.dump(data, f)
 
