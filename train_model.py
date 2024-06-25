@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 import json
+import pickle  # Import pickle module directly
 
 # Load the data from JSON file
 try:
@@ -35,11 +36,11 @@ if not data.empty and 'result' in data.columns:
         y_pred = model.predict(X_test)
         print(f'Accuracy: {accuracy_score(y_test, y_pred)}')
 
-        # Save the model and important features
-        import pickle
+        # Save the model as model.pkl
         with open('model.pkl', 'wb') as f:
             pickle.dump(model, f)
 
+        # Save important features as important_features.csv
         feature_importances = model.feature_importances_
         feature_names = X_train.columns
         important_features = pd.DataFrame({'Feature': feature_names, 'Importance': feature_importances})
