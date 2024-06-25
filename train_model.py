@@ -2,34 +2,46 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
+import json
 
-# Load the data
-data = pd.read_json('jenkins_build_data.json')
+# Load the data from JSON file
+try:
+    with open('jenkins_build_data.json', 'r') as f:
+        data = json.load(f)
+    data = pd.DataFrame(data)
+except (FileNotFoundError, json.JSONDecodeError) as e:
+    print(f"Error loading data: {str(e)}")
+    data = pd.DataFrame()
 
-# Preprocess the data
-data['duration'] = data['duration'] / 1000  # Convert duration to seconds
-data = pd.get_dummies(data, columns=['result'], drop_first=True)
+# Check if data is loaded successfully
+if not data.empty:
+    # Preprocess the data
+    data['duration'] = data['duration'] / 1000  # Convert duration to seconds
+    data = pd.get_dummies(data, columns=['result'], drop_first=True)
 
-# Split the data
-X = data.drop(['result'], axis=1)
-y = data['result']
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # Split the data
+    X = data.drop(['result'], axis=1)
+    y = data['result']  # Assuming 'result' is your target variable
 
-# Train the model
-model = RandomForestClassifier(n_estimators=100, random_state=42)
-model.fit(X_train, y_train)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Evaluate the model
-y_pred = model.predict(X_test)
-print(f'Accuracy: {accuracy_score(y_test, y_pred)}')
+    # Train the model
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
 
-# Save the model and important features
-import pickle
-with open('model.pkl', 'wb') as f:
-    pickle.dump(model, f)
+    # Evaluate the model
+    y_pred = model.predict(X_test)
+    print(f'Accuracy: {accuracy_score(y_test, y_pred)}')
 
-feature_importances = model.feature_importances_
-feature_names = X_train.columns
-important_features = pd.DataFrame({'Feature': feature_names, 'Importance': feature_importances})
-important_features.sort_values(by='Importance', ascending=False, inplace=True)
-important_features.to_csv('important_features.csv', index=False)
+    # Save the model and important features
+    import pickle
+    with open('model.pkl', 'wb') as f:
+        pickle.dump(model, f)
+
+    feature_importances = model.feature_importances_
+    feature_names = X_train.columns
+    important_features = pd.DataFrame({'Feature': feature_names, 'Importance': feature_importances})
+    important_features.sort_values(by='Importance', ascending=False, inplace=True)
+    important_features.to_csv('important_features.csv', index=False)
+else:
+    print("No data loaded. Check your data file or loading process.")
