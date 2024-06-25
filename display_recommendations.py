@@ -22,5 +22,6 @@ build_info = server.get_build_info(job_name, 'lastBuild')
 build_number = build_info['number']
 recommendations = get_recommendations(build_number)
 
+
 # Display recommendations in the Jenkins console or custom dashboard
 print(f'Recommendations for build {build_number}: {recommendations}')
