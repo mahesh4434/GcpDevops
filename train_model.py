@@ -5,15 +5,31 @@ from sklearn.metrics import accuracy_score
 import pickle
 
 # Load the data
-data = pd.read_json(r'D:\New folder\POC\jenkins_build_data.json')
+try:
+    data = pd.read_json(r'D:\New folder\POC\jenkins_build_data.json')
+except Exception as e:
+    print(f"Error loading JSON data: {e}")
+    raise
+
+# Print information about the loaded data for debugging
+print(f"Columns in data: {data.columns}")
+print(f"Sample data:\n{data.head()}")
+
+# Check if 'result' column exists
+if 'result' not in data.columns:
+    raise ValueError("Expected 'result' column not found in the loaded data.")
 
 # Preprocess the data
-data['duration'] = data['duration'] / 1000  # Convert duration to seconds
-data = pd.get_dummies(data, columns=['result'], drop_first=True)
+try:
+    data['duration'] = data['duration'] / 1000  # Convert duration to seconds
+    data = pd.get_dummies(data, columns=['result'], drop_first=True)
+except Exception as e:
+    print(f"Error preprocessing data: {e}")
+    raise
 
 # Split the data
-X = data.drop(['result'], axis=1)
-y = data['result']
+X = data.drop(['result_success'], axis=1)  # Adjust based on actual column name after preprocessing
+y = data['result_success']  # Adjust based on actual column name after preprocessing
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Train the model
@@ -25,11 +41,15 @@ y_pred = model.predict(X_test)
 print(f'Accuracy: {accuracy_score(y_test, y_pred)}')
 
 # Save the model and important features
-with open(r'D:\New folder\POC\model.pkl', 'wb') as f:
-    pickle.dump(model, f)
+try:
+    with open(r'D:\New folder\POC\model.pkl', 'wb') as f:
+        pickle.dump(model, f)
 
-feature_importances = model.feature_importances_
-feature_names = X_train.columns
-important_features = pd.DataFrame({'Feature': feature_names, 'Importance': feature_importances})
-important_features.sort_values(by='Importance', ascending=False, inplace=True)
-important_features.to_csv(r'D:\New folder\POC\important_features.csv', index=False)
+    feature_importances = model.feature_importances_
+    feature_names = X_train.columns
+    important_features = pd.DataFrame({'Feature': feature_names, 'Importance': feature_importances})
+    important_features.sort_values(by='Importance', ascending=False, inplace=True)
+    important_features.to_csv(r'D:\New folder\POC\important_features.csv', index=False)
+except Exception as e:
+    print(f"Error saving model or features: {e}")
+    raise
