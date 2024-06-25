@@ -32,6 +32,10 @@ target_column = [col for col in data.columns if col.startswith('result_')]
 if not target_column:
     raise ValueError("No target column found after one-hot encoding.")
 
+# Convert timestamp to numerical if necessary
+if 'timestamp' in data.columns:
+    data['timestamp'] = pd.to_numeric(data['timestamp'])
+
 # Split the data
 X = data.drop(target_column, axis=1)
 y = data[target_column[0]]  # Assuming only one target column exists
@@ -39,7 +43,11 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 # Train the model
 model = RandomForestClassifier(n_estimators=100, random_state=42)
-model.fit(X_train, y_train)
+try:
+    model.fit(X_train, y_train)
+except Exception as e:
+    print(f"Error fitting model: {e}")
+    raise
 
 # Evaluate the model
 y_pred = model.predict(X_test)
