@@ -1,22 +1,35 @@
+import jenkins
 import json
-import os
 
-# Example data to be saved (replace with your actual data retrieval logic)
-data = {
-    'build_number': 12345,
-    'status': 'success',
-    'timestamp': '2024-06-25T12:00:00Z',
-    'artifacts': ['artifact1.jar', 'artifact2.zip']
-}
+# Jenkins server details
+jenkins_url = 'http://localhost:8080/'
+username = 'mahesh4434'
+password = 'Dada@7744'
+job_name = 'GCP_Apply'
 
-# Define the output JSON file path
+# Connect to Jenkins server
+server = jenkins.Jenkins(jenkins_url, username=username, password=password)
+
+# Get information about the job
+job_info = server.get_job_info(job_name)
+
+# Get the list of builds for the job
+builds = job_info['builds']
+
+# Collect build information
+data = []
+for build in builds:
+    build_info = server.get_build_info(job_name, build['number'])
+    data.append({
+        'number': build['number'],
+        'result': build_info['result'],
+        'duration': build_info['duration'],
+        'timestamp': build_info['timestamp']
+    })
+
+# Save build data to a JSON file in D:\New folder\POC
 output_file = r'D:\New folder\POC\jenkins_build_data.json'
-
-# Ensure the directory exists before saving
-os.makedirs(os.path.dirname(output_file), exist_ok=True)
-
-# Save data to JSON file
 with open(output_file, 'w') as f:
     json.dump(data, f)
 
-print(f"Jenkins build data saved to {output_file}")
+print(f'Build data exported to {output_file}')
