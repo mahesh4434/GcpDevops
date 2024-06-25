@@ -2,9 +2,10 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
+import pickle
 
 # Load the data
-data = pd.read_json('jenkins_build_data.json')
+data = pd.read_json(r'D:\New folder\POC\jenkins_build_data.json')
 
 # Preprocess the data
 data['duration'] = data['duration'] / 1000  # Convert duration to seconds
@@ -24,12 +25,11 @@ y_pred = model.predict(X_test)
 print(f'Accuracy: {accuracy_score(y_test, y_pred)}')
 
 # Save the model and important features
-import pickle
-with open('model.pkl', 'wb') as f:
+with open(r'D:\New folder\POC\model.pkl', 'wb') as f:
     pickle.dump(model, f)
 
 feature_importances = model.feature_importances_
 feature_names = X_train.columns
 important_features = pd.DataFrame({'Feature': feature_names, 'Importance': feature_importances})
 important_features.sort_values(by='Importance', ascending=False, inplace=True)
-important_features.to_csv('important_features.csv', index=False)
+important_features.to_csv(r'D:\New folder\POC\important_features.csv', index=False)
