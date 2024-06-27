@@ -56,24 +56,27 @@ print(f'Accuracy: {accuracy_score(y_test, y_pred)}')
 
 # Save the model and important features
 try:
-    with open(r'D:\New folder\POC\model.pkl', 'wb') as f:
+    model_path = r'D:\New folder\POC\model.pkl'
+    with open(model_path, 'wb') as f:
         pickle.dump(model, f)
+    print(f"Model saved to {model_path}")
 
     feature_importances = model.feature_importances_
     feature_names = X_train.columns
     important_features = pd.DataFrame({'Feature': feature_names, 'Importance': feature_importances})
     important_features.sort_values(by='Importance', ascending=False, inplace=True)
-
-    # Ensure the directory exists
-    output_dir = r'D:\New folder\POC'
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    # Write the important features to a CSV file
-    important_features.to_csv(os.path.join(output_dir, 'important_features.csv'), index=False)
-except PermissionError as e:
-    print(f"Permission error: {e}")
-    # Add code here to handle the permission error, such as changing file permissions or alerting the user
+    
+    # Attempt to save to the original path
+    features_path = r'D:\New folder\POC\important_features.csv'
+    try:
+        important_features.to_csv(features_path, index=False)
+        print(f"Important features saved to {features_path}")
+    except PermissionError as e:
+        # Try saving to an alternative path
+        alternative_path = r'D:\New folder\POC\important_features_alt.csv'
+        important_features.to_csv(alternative_path, index=False)
+        print(f"Permission denied for the original path. Important features saved to {alternative_path}")
+        print(f"Original error: {e}")
 except Exception as e:
     print(f"Error saving model or features: {e}")
     raise
