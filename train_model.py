@@ -24,6 +24,9 @@ if 'result' not in data.columns:
 try:
     data['duration'] = data['duration'] / 1000  # Convert duration to seconds
     data = pd.get_dummies(data, columns=['result'], drop_first=True)
+    data['timestamp'] = pd.to_datetime(data['timestamp'])
+    data['timestamp'] = data['timestamp'].astype(int) / 10**9  # Convert to Unix timestamp
+    data.drop(columns=['stages'], inplace=True)  # Drop the 'stages' column
 except Exception as e:
     print(f"Error preprocessing data: {e}")
     raise
@@ -32,10 +35,6 @@ except Exception as e:
 target_column = [col for col in data.columns if col.startswith('result_')]
 if not target_column:
     raise ValueError("No target column found after one-hot encoding.")
-
-# Convert timestamp to numerical if necessary
-if 'timestamp' in data.columns:
-    data['timestamp'] = pd.to_numeric(data['timestamp'])
 
 # Split the data
 X = data.drop(target_column, axis=1)
@@ -66,7 +65,7 @@ try:
     important_features = pd.DataFrame({'Feature': feature_names, 'Importance': feature_importances})
     important_features.sort_values(by='Importance', ascending=False, inplace=True)
     
-    # Attempt to save to the original path
+    # Save important features to CSV
     features_path = r'D:\New folder\POC\important_features.csv'
     try:
         important_features.to_csv(features_path, index=False)
