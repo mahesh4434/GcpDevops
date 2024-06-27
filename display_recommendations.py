@@ -22,10 +22,26 @@ def get_recommendations(build_number):
     # Here, we are assuming a placeholder recommendation.
     return 'Optimize resource allocation for step X.'
 
+def get_build_data(job_name):
+    job_info = server.get_job_info(job_name)
+    builds = job_info['builds']
+
+    data = []
+    for build in builds:
+        build_info = server.get_build_info(job_name, build['number'])
+        data.append({
+            'number': build['number'],
+            'result': build_info['result'],
+            'duration': build_info['duration'],
+            'timestamp': build_info['timestamp']
+        })
+    return data
+
 # Get the last build number
 build_info = server.get_build_info(job_name, 'lastBuild')
 build_number = build_info['number']
 recommendations = get_recommendations(build_number)
+build_data = get_build_data(job_name)
 
 # Flask application
 app = Flask(__name__)
@@ -40,11 +56,48 @@ def home():
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <title>Jenkins Build Recommendations</title>
+        <style>
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+            }}
+            table, th, td {{
+                border: 1px solid black;
+            }}
+            th, td {{
+                padding: 8px;
+                text-align: left;
+            }}
+            th {{
+                background-color: #f2f2f2;
+            }}
+        </style>
       </head>
       <body>
         <div class="container">
           <h1>Recommendations for Build {build_number}</h1>
           <p>{recommendations}</p>
+          <h2>Build Data</h2>
+          <table>
+            <tr>
+              <th>Build Number</th>
+              <th>Result</th>
+              <th>Duration (seconds)</th>
+              <th>Timestamp</th>
+            </tr>
+    '''
+    for build in build_data:
+        html_content += f'''
+        <tr>
+          <td>{build['number']}</td>
+          <td>{build['result']}</td>
+          <td>{build['duration'] / 1000}</td>
+          <td>{build['timestamp']}</td>
+        </tr>
+        '''
+    
+    html_content += '''
+          </table>
         </div>
       </body>
     </html>
