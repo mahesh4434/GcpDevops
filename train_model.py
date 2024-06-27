@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 import pickle
+import os
 
 # Load the data
 try:
@@ -55,14 +56,20 @@ print(f'Accuracy: {accuracy_score(y_test, y_pred)}')
 
 # Save the model and important features
 try:
-    with open(r'D:\New folder\POC\model.pkl', 'wb') as f:
+    model_path = r'D:\New folder\POC\model.pkl'
+    with open(model_path, 'wb') as f:
         pickle.dump(model, f)
+    print(f"Model saved to {model_path}")
 
     feature_importances = model.feature_importances_
     feature_names = X_train.columns
     important_features = pd.DataFrame({'Feature': feature_names, 'Importance': feature_importances})
     important_features.sort_values(by='Importance', ascending=False, inplace=True)
-    important_features.to_csv(r'D:\New folder\POC\important_features.csv', index=False)
+    
+    # Save to the original path
+    features_path = r'D:\New folder\POC\important_features.csv'
+    important_features.to_csv(features_path, index=False)
+    print(f"Important features saved to {features_path}")
 except Exception as e:
     print(f"Error saving model or features: {e}")
     raise
