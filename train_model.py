@@ -66,10 +66,13 @@ try:
     important_features = pd.DataFrame({'Feature': feature_names, 'Importance': feature_importances})
     important_features.sort_values(by='Importance', ascending=False, inplace=True)
     
-    # Save to the original path
+    # Attempt to save to the original path
     features_path = r'D:\New folder\POC\important_features.csv'
-    important_features.to_csv(features_path, index=False)
-    print(f"Important features saved to {features_path}")
-except Exception as e:
-    print(f"Error saving model or features: {e}")
-    raise
+    try:
+        important_features.to_csv(features_path, index=False)
+        print(f"Important features saved to {features_path}")
+    except PermissionError as e:
+        # Try saving to an alternative path
+        alternative_path = r'D:\New folder\POC\important_features_alt.csv'
+        important_features.to_csv(alternative_path, index=False)
+        print(f"Permission denied
