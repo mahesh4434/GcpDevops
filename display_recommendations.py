@@ -82,3 +82,4 @@ try:
 except Exception as e:
     print(f"Error updating job description: {e}")
     raise
+
