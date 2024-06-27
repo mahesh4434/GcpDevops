@@ -1,85 +1,53 @@
 import jenkins
-import pandas as pd
 import pickle
-from datetime import datetime
-import requests
-from requests.auth import HTTPBasicAuth
-import re
+import pandas as pd
 
-# Jenkins details
-jenkins_url = 'http://localhost:8080/'
-username = 'mahesh4434'
-api_token = '11b9d314ad7cd85e9661733d0ddba3c9c8'  # Provided API token
-job_name = 'GCP_Apply'
-
-# Load the model
-model_path = r'D:\New folder\POC\model.pkl'
-with open(model_path, 'rb') as f:
+# Load the model and important features
+with open(r'D:\New folder\POC\model.pkl', 'rb') as f:
     model = pickle.load(f)
 
-# Function to get CSRF crumb
-def get_crumb(jenkins_url, username, api_token):
-    crumb_url = jenkins_url + 'crumbIssuer/api/json'
-    response = requests.get(crumb_url, auth=HTTPBasicAuth(username, api_token))
-    response.raise_for_status()
-    return response.json()
+important_features = pd.read_csv(r'D:\New folder\POC\important_features.csv')
 
-# Get CSRF crumb
-crumb = get_crumb(jenkins_url, username, api_token)
-crumb_header = crumb['crumbRequestField']
-crumb_value = crumb['crumb']
+# Connect to Jenkins
+server = jenkins.Jenkins('http://localhost:8080/', username='mahesh4434', password='Dada@7744')
+job_name = 'GCP_Apply'
 
-# Initialize Jenkins server
-server = jenkins.Jenkins(jenkins_url, username=username, password=api_token)
+def get_recommendations(build_number):
+    # Example function to get recommendations based on build number
+    # Use your trained model to generate recommendations
+    # This is a placeholder function
+    # Replace this with your actual logic to generate recommendations
+    # For example, use the model to predict based on important features
+    # Here, we are assuming a placeholder recommendation.
+    return 'Optimize resource allocation for step X.'
 
-# Fetch latest build info
-try:
-    latest_build_number = server.get_job_info(job_name)['lastCompletedBuild']['number']
-    latest_build_info = server.get_build_info(job_name, latest_build_number)
-except Exception as e:
-    print(f"Error fetching build info: {e}")
-    raise
+# Get the last build number
+build_info = server.get_build_info(job_name, 'lastBuild')
+build_number = build_info['number']
+recommendations = get_recommendations(build_number)
 
-# Generate recommendations based on the model
-build_data = {
-    'number': latest_build_info['number'],
-    'result': latest_build_info['result'],
-    'duration': latest_build_info['duration'],
-    'timestamp': datetime.fromtimestamp(latest_build_info['timestamp'] / 1000.0)
-}
+# Display recommendations in the Jenkins console or custom dashboard
+print(f'Recommendations for build {build_number}: {recommendations}')
 
-build_df = pd.DataFrame([build_data])
-build_df['duration'] = build_df['duration'] / 1000
-build_df = pd.get_dummies(build_df, columns=['result'], drop_first=True)
-if 'timestamp' in build_df.columns:
-    build_df['timestamp'] = pd.to_numeric(build_df['timestamp'])
+# Example: Push recommendations to a CI/CD dashboard (pseudo-code)
+# Replace this with actual implementation to integrate with your dashboard
+# For example, use Jenkins API to update a dashboard or use a Jenkins plugin
 
-# Ensure `number` column is present in X_latest for prediction
-X_latest = build_df[['number', 'duration', 'timestamp']]  # Include 'number' feature here
+# Sample pseudo-code to update a Jenkins job description with recommendations
+job_description = server.get_job_config(job_name)
+new_description = f"{job_description}\nRecommendations: {recommendations}"
+server.reconfig_job(job_name, new_description)
 
-# Predict recommendations
-try:
-    recommendations = model.predict(X_latest)
-    print("Recommendations:", recommendations)
-except Exception as e:
-    print(f"Error predicting recommendations: {e}")
-    raise
+# Example: Update a custom dashboard with recommendations (pseudo-code)
+# Replace this with actual implementation to update your custom dashboard
+# For example, if you have a custom web dashboard, use APIs to push data
 
-# Update Jenkins job description
-try:
-    job_config = server.get_job_config(job_name)
-    new_description = f"<description>Recommendations: {recommendations[0]}</description>"
-    updated_config = re.sub(r'<description>.*?</description>', new_description, job_config, flags=re.DOTALL)
-    
-    headers = {
-        crumb_header: crumb_value,
-        'Content-Type': 'application/xml'
-    }
-    config_url = f"{jenkins_url}job/{job_name}/config.xml"
-    response = requests.post(config_url, data=updated_config, auth=HTTPBasicAuth(username, api_token), headers=headers)
-    response.raise_for_status()
-    print("Job description updated successfully")
-except Exception as e:
-    print(f"Error updating job description: {e}")
-    raise
+# Assuming you have a custom dashboard API endpoint
+dashboard_url = 'http://your-custom-dashboard-api/recommendations'
+payload = {'build_number': build_number, 'recommendations': recommendations}
+response = requests.post(dashboard_url, json=payload)
 
+if response.status_code == 200:
+    print(f'Recommendations pushed to dashboard successfully.')
+else:
+    print(f'Failed to push recommendations to dashboard. Status Code: {response.status_code}')
