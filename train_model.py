@@ -3,7 +3,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 import pickle
-import os
 
 # Load the data
 try:
@@ -63,17 +62,7 @@ try:
     feature_names = X_train.columns
     important_features = pd.DataFrame({'Feature': feature_names, 'Importance': feature_importances})
     important_features.sort_values(by='Importance', ascending=False, inplace=True)
-
-    # Ensure the directory exists
-    output_dir = r'D:\New folder\POC'
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    # Write the important features to a CSV file
-    important_features.to_csv(os.path.join(output_dir, 'important_features.csv'), index=False)
-except PermissionError as e:
-    print(f"Permission error: {e}")
-    # Add code here to handle the permission error, such as changing file permissions or alerting the user
+    important_features.to_csv(r'D:\New folder\POC\important_features.csv', index=False)
 except Exception as e:
     print(f"Error saving model or features: {e}")
     raise
