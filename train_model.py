@@ -1,3 +1,48 @@
+import jenkins
+import json
+
+# Jenkins server details
+jenkins_url = 'http://localhost:8080/'
+username = 'mahesh4434'
+password = 'Dada@7744'
+job_name = 'GCP_Apply'
+
+# Connect to Jenkins server
+server = jenkins.Jenkins(jenkins_url, username=username, password=password)
+
+# Get information about the job
+job_info = server.get_job_info(job_name)
+
+# Get the list of builds for the job
+builds = job_info['builds']
+
+# Collect build information
+data = []
+for build in builds:
+    build_info = server.get_build_info(job_name, build['number'])
+    data.append({
+        'number': build['number'],
+        'result': build_info['result'],
+        'duration': build_info['duration'],
+        'timestamp': build_info['timestamp']
+    })
+
+# Save build data to a JSON file in D:\New folder\POC
+output_file = r'D:\New folder\POC\jenkins_build_data.json'
+with open(output_file, 'w') as f:
+    json.dump(data, f)
+
+print(f'Build data exported to {output_file}')
+
+
+export_jenkins_data.py
+
+
+
+
+
+
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
@@ -24,9 +69,6 @@ if 'result' not in data.columns:
 try:
     data['duration'] = data['duration'] / 1000  # Convert duration to seconds
     data = pd.get_dummies(data, columns=['result'], drop_first=True)
-    data['timestamp'] = pd.to_datetime(data['timestamp'])
-    data['timestamp'] = data['timestamp'].astype(int) / 10**9  # Convert to Unix timestamp
-    data.drop(columns=['stages'], inplace=True)  # Drop the 'stages' column
 except Exception as e:
     print(f"Error preprocessing data: {e}")
     raise
@@ -35,6 +77,10 @@ except Exception as e:
 target_column = [col for col in data.columns if col.startswith('result_')]
 if not target_column:
     raise ValueError("No target column found after one-hot encoding.")
+
+# Convert timestamp to numerical if necessary
+if 'timestamp' in data.columns:
+    data['timestamp'] = pd.to_numeric(data['timestamp'])
 
 # Split the data
 X = data.drop(target_column, axis=1)
@@ -65,7 +111,7 @@ try:
     important_features = pd.DataFrame({'Feature': feature_names, 'Importance': feature_importances})
     important_features.sort_values(by='Importance', ascending=False, inplace=True)
     
-    # Save important features to CSV
+    # Attempt to save to the original path
     features_path = r'D:\New folder\POC\important_features.csv'
     try:
         important_features.to_csv(features_path, index=False)
