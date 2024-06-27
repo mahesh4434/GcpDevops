@@ -37,11 +37,25 @@ def get_build_data(job_name):
         })
     return data
 
+def get_pipeline_data(job_name, build_number):
+    build_info = server.get_build_info(job_name, build_number)
+    stages = build_info['actions'][0]['stages']
+    pipeline_data = []
+    for stage in stages:
+        pipeline_data.append({
+            'name': stage['name'],
+            'status': stage['status'],
+            'duration': stage['durationMillis'],
+            'start_time': stage['startTimeMillis']
+        })
+    return pipeline_data
+
 # Get the last build number
 build_info = server.get_build_info(job_name, 'lastBuild')
 build_number = build_info['number']
 recommendations = get_recommendations(build_number)
 build_data = get_build_data(job_name)
+pipeline_data = get_pipeline_data(job_name, build_number)
 
 # Flask application
 app = Flask(__name__)
@@ -93,6 +107,27 @@ def home():
           <td>{build['result']}</td>
           <td>{build['duration'] / 1000}</td>
           <td>{build['timestamp']}</td>
+        </tr>
+        '''
+    
+    html_content += '''
+          </table>
+          <h2>Pipeline Stages Data for Build {build_number}</h2>
+          <table>
+            <tr>
+              <th>Stage Name</th>
+              <th>Status</th>
+              <th>Duration (milliseconds)</th>
+              <th>Start Time (milliseconds)</th>
+            </tr>
+    '''
+    for stage in pipeline_data:
+        html_content += f'''
+        <tr>
+          <td>{stage['name']}</td>
+          <td>{stage['status']}</td>
+          <td>{stage['duration']}</td>
+          <td>{stage['start_time']}</td>
         </tr>
         '''
     
