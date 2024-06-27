@@ -39,15 +39,18 @@ def get_build_data(job_name):
 
 def get_pipeline_data(job_name, build_number):
     build_info = server.get_build_info(job_name, build_number)
-    stages = build_info['actions'][0]['stages']
     pipeline_data = []
-    for stage in stages:
-        pipeline_data.append({
-            'name': stage['name'],
-            'status': stage['status'],
-            'duration': stage['durationMillis'],
-            'start_time': stage['startTimeMillis']
-        })
+    for action in build_info['actions']:
+        if 'stages' in action:
+            stages = action['stages']
+            for stage in stages:
+                pipeline_data.append({
+                    'name': stage['name'],
+                    'status': stage['status'],
+                    'duration': stage['durationMillis'],
+                    'start_time': stage['startTimeMillis']
+                })
+            break
     return pipeline_data
 
 # Get the last build number
@@ -121,14 +124,21 @@ def home():
               <th>Start Time (milliseconds)</th>
             </tr>
     '''
-    for stage in pipeline_data:
-        html_content += f'''
-        <tr>
-          <td>{stage['name']}</td>
-          <td>{stage['status']}</td>
-          <td>{stage['duration']}</td>
-          <td>{stage['start_time']}</td>
-        </tr>
+    if pipeline_data:
+        for stage in pipeline_data:
+            html_content += f'''
+            <tr>
+              <td>{stage['name']}</td>
+              <td>{stage['status']}</td>
+              <td>{stage['duration']}</td>
+              <td>{stage['start_time']}</td>
+            </tr>
+            '''
+    else:
+        html_content += '''
+            <tr>
+              <td colspan="4">No pipeline stages data available.</td>
+            </tr>
         '''
     
     html_content += '''
@@ -141,26 +151,3 @@ def home():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-# Example: Push recommendations to a CI/CD dashboard (pseudo-code)
-# Replace this with actual implementation to integrate with your dashboard
-# For example, use Jenkins API to update a dashboard or use a Jenkins plugin
-
-# Sample pseudo-code to update a Jenkins job description with recommendations
-job_description = server.get_job_config(job_name)
-new_description = f"{job_description}\nRecommendations: {recommendations}"
-server.reconfig_job(job_name, new_description)
-
-# Example: Update a custom dashboard with recommendations (pseudo-code)
-# Replace this with actual implementation to update your custom dashboard
-# For example, if you have a custom web dashboard, use APIs to push data
-
-# Assuming you have a custom dashboard API endpoint
-dashboard_url = 'http://your-custom-dashboard-api/recommendations'
-payload = {'build_number': build_number, 'recommendations': recommendations}
-response = requests.post(dashboard_url, json=payload)
-
-if response.status_code == 200:
-    print(f'Recommendations pushed to dashboard successfully.')
-else:
-    print(f'Failed to push recommendations to dashboard. Status Code: {response.status_code}')
