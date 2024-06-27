@@ -1,6 +1,7 @@
 import jenkins
 import pickle
 import pandas as pd
+from flask import Flask, render_template_string
 
 # Load the model and important features
 with open(r'D:\New folder\POC\model.pkl', 'rb') as f:
@@ -26,8 +27,32 @@ build_info = server.get_build_info(job_name, 'lastBuild')
 build_number = build_info['number']
 recommendations = get_recommendations(build_number)
 
-# Display recommendations in the Jenkins console or custom dashboard
-print(f'Recommendations for build {build_number}: {recommendations}')
+# Flask application
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    # Generate HTML content
+    html_content = f'''
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <title>Jenkins Build Recommendations</title>
+      </head>
+      <body>
+        <div class="container">
+          <h1>Recommendations for Build {build_number}</h1>
+          <p>{recommendations}</p>
+        </div>
+      </body>
+    </html>
+    '''
+    return render_template_string(html_content)
+
+if __name__ == '__main__':
+    app.run(debug=True)
 
 # Example: Push recommendations to a CI/CD dashboard (pseudo-code)
 # Replace this with actual implementation to integrate with your dashboard
