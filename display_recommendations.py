@@ -4,6 +4,7 @@ import pickle
 from datetime import datetime
 import requests
 from requests.auth import HTTPBasicAuth
+import re
 
 # Jenkins details
 jenkins_url = 'http://localhost:8080/'
@@ -53,14 +54,22 @@ build_df = pd.get_dummies(build_df, columns=['result'], drop_first=True)
 if 'timestamp' in build_df.columns:
     build_df['timestamp'] = pd.to_numeric(build_df['timestamp'])
 
-X_latest = build_df.drop(columns=['number'])
-recommendations = model.predict(X_latest)
+# Ensure `number` column is present in X_latest for prediction
+X_latest = build_df[['number', 'duration', 'timestamp']]  # Include 'number' feature here
+
+# Predict recommendations
+try:
+    recommendations = model.predict(X_latest)
+    print("Recommendations:", recommendations)
+except Exception as e:
+    print(f"Error predicting recommendations: {e}")
+    raise
 
 # Update Jenkins job description
 try:
     job_config = server.get_job_config(job_name)
-    new_description = f"<description>Recommendations: {recommendations}</description>"
-    updated_config = job_config.replace('<description>.*</description>', new_description)
+    new_description = f"<description>Recommendations: {recommendations[0]}</description>"
+    updated_config = re.sub(r'<description>.*?</description>', new_description, job_config, flags=re.DOTALL)
     
     headers = {
         crumb_header: crumb_value,
