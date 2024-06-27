@@ -14,72 +14,104 @@ server = jenkins.Jenkins('http://localhost:8080/', username='mahesh4434', passwo
 job_name = 'GCP_Apply'
 
 def get_recommendations(build_number):
-    # Example function to get recommendations based on build number
-    # Use your trained model to generate recommendations
-    # This is a placeholder function
-    # Replace this with your actual logic to generate recommendations
-    # For example, use the model to predict based on important features
-    # Here, we are assuming a placeholder recommendation.
-    return 'Optimize resource allocation for step X.'
 
-def get_pipeline_data(job_name, build_number):
-    build_info = server.get_build_info(job_name, build_number)
-    stages = build_info['actions'][0].get('stages', [])
-    pipeline_data = []
-    for stage in stages:
-        stage_data = {
-            'name': stage['name'],
-            'status': stage['status'],
-            'durationMillis': stage['durationMillis']
-        }
-        pipeline_data.append(stage_data)
-    return pipeline_data
+    return 'Optimize resource allocation for jenkins Pipeline.'
+
+def get_build_data(job_name):
+    job_info = server.get_job_info(job_name)
+    builds = job_info['builds']
+
+    data = []
+    for build in builds:
+        build_info = server.get_build_info(job_name, build['number'])
+        data.append({
+            'number': build['number'],
+            'result': build_info['result'],
+            'duration': build_info['duration'],
+            'timestamp': build_info['timestamp']
+        })
+    return data
 
 # Get the last build number
 build_info = server.get_build_info(job_name, 'lastBuild')
 build_number = build_info['number']
 recommendations = get_recommendations(build_number)
+build_data = get_build_data(job_name)
 
-# Get pipeline data for the last build
-pipeline_data = get_pipeline_data(job_name, build_number)
-
-# Create a Flask application
+# Flask application
 app = Flask(__name__)
 
 @app.route('/')
-def index():
-    # Create HTML content
-    html_content = '''
-    <!DOCTYPE html>
-    <html>
-    <head>
+def home():
+    # Generate HTML content
+    html_content = f'''
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <title>Jenkins Build Recommendations</title>
-    </head>
-    <body>
-        <h1>Recommendations for Build {{ build_number }}</h1>
-        <p>{{ recommendations }}</p>
-        <h2>Pipeline Stages</h2>
-        <table border="1">
+        <style>
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+            }}
+            table, th, td {{
+                border: 1px solid black;
+            }}
+            th, td {{
+                padding: 8px;
+                text-align: left;
+            }}
+            th {{
+                background-color: #f2f2f2;
+            }}
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>Recommendations for Build {build_number}</h1>
+          <p>{recommendations}</p>
+          <h2>Build Data</h2>
+          <table>
             <tr>
-                <th>Stage Name</th>
-                <th>Status</th>
-                <th>Duration (ms)</th>
+              <th>Build Number</th>
+              <th>Result</th>
+              <th>Duration (seconds)</th>
+              <th>Timestamp</th>
             </tr>
     '''
-    for stage in pipeline_data:
+    for build in build_data:
         html_content += f'''
-            <tr>
-                <td>{stage['name']}</td>
-                <td>{stage['status']}</td>
-                <td>{stage['durationMillis']}</td>
-            </tr>
+        <tr>
+          <td>{build['number']}</td>
+          <td>{build['result']}</td>
+          <td>{build['duration'] / 1000}</td>
+          <td>{build['timestamp']}</td>
+        </tr>
         '''
+    
     html_content += '''
-        </table>
-    </body>
+          </table>
+        </div>
+      </body>
     </html>
     '''
-    return render_template_string(html_content, build_number=build_number, recommendations=recommendations)
+    return render_template_string(html_content)
 
 if __name__ == '__main__':
-    app.run(port=5000)
+    app.run(debug=True)
+
+
+job_description = server.get_job_config(job_name)
+new_description = f"{job_description}\nRecommendations: {recommendations}"
+server.reconfig_job(job_name, new_description)
+
+dashboard_url = 'http://your-custom-dashboard-api/recommendations'
+payload = {'build_number': build_number, 'recommendations': recommendations}
+response = requests.post(dashboard_url, json=payload)
+
+if response.status_code == 200:
+    print(f'Recommendations pushed to dashboard successfully.')
+else:
+    print(f'Failed to push recommendations to dashboard. Status Code: {response.status_code}')
