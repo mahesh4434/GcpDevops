@@ -1,9 +1,11 @@
 import joblib
 import sys
 import numpy as np
+import pandas as pd
 
-# Load the model
+# Load the model and scaler
 model = joblib.load('pipeline_predictor.pkl')
+scaler = joblib.load('scaler.pkl')
 
 # Example features for the new pipeline run
 num_commits = int(sys.argv[1])
@@ -14,6 +16,9 @@ lines_of_code_changed = int(sys.argv[5])
 
 # Prepare feature array
 features = np.array([[num_commits, num_tests, test_pass_rate, previous_build_result, lines_of_code_changed]])
+
+# Scale features
+features = scaler.transform(features)
 
 # Predict
 prediction = model.predict(features)
