@@ -1,27 +1,26 @@
-import pickle
 import sys
+import pickle
 
-def load_model(model_path):
+def predict_pipeline_success(model_path):
+    # Load the model
     with open(model_path, 'rb') as file:
         model = pickle.load(file)
-    return model
-
-def predict_success(model, features):
-    # Assuming features are passed as a space-separated string
-    features = [float(x) for x in features.split()]
+    
+    # Gather the data features for prediction
+    features = [/* feature values here */]
+    
+    # Predict the outcome
     prediction = model.predict([features])
-    return prediction[0]
-
-if __name__ == "__main__":
-    model_path = 'D:\\New folder\\DevOpsPOC\\DevOpsGeniAiPart\\CSV files\\pipeline_predictor.pkl'
-    features = sys.argv[1]  # Features should be passed as a command line argument
     
-    model = load_model(model_path)
-    result = predict_success(model, features)
-    
-    if result == 1:
-        print("The pipeline is expected to succeed.")
-        sys.exit(0)
+    # Print the prediction result
+    if prediction[0] == 1:
+        print("The pipeline is predicted to succeed.")
     else:
-        print("The pipeline is expected to fail.")
+        print("The pipeline is predicted to fail.")
+    
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python predict_pipeline.py <model_path>")
         sys.exit(1)
+    model_path = sys.argv[1]
+    predict_pipeline_success(model_path)
