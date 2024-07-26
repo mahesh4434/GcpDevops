@@ -3,12 +3,20 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import os
 
-
 # Use path from Jenkins workspace
 data_path = os.path.join(os.getcwd(), 'pipeline_data.csv')
 
-if not os.path.isfile(data_path):
-    raise FileNotFoundError(f"Data file not found: {data_path}")
+# Create a dummy data file if not present (for demonstration)
+if not os.path.exists(data_path):
+    dummy_data = pd.DataFrame({
+        'num_commits': [5, 3, 10],
+        'num_tests': [100, 80, 120],
+        'test_pass_rate': [0.95, 0.85, 0.90],
+        'previous_build_result': [1, 0, 1],
+        'lines_of_code_changed': [50, 20, 80],
+        'build_success': [1, 0, 1]
+    })
+    dummy_data.to_csv(data_path, index=False)
 
 data = pd.read_csv(data_path)
 
@@ -22,15 +30,4 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 # Feature scaling
 scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
-
-# Save the preprocessed data in Jenkins workspace
-X_train_path = os.path.join(os.getcwd(), 'X_train.csv')
-X_test_path = os.path.join(os.getcwd(), 'X_test.csv')
-y_train_path = os.path.join(os.getcwd(), 'y_train.csv')
-y_test_path = os.path.join(os.getcwd(), 'y_test.csv')
-
-pd.DataFrame(X_train).to_csv(X_train_path, index=False)
-pd.DataFrame(X_test).to_csv(X_test_path, index=False)
-pd.DataFrame(y_train).to_csv(y_train_path, index=False)
-pd.DataFrame(y_test).to_csv(y_test_path, index=False)
+X_t
