@@ -4,10 +4,10 @@ from sklearn.metrics import accuracy_score
 import joblib
 
 # Load preprocessed data
-X_train = pd.read_csv('X_train.csv')
-X_test = pd.read_csv('X_test.csv')
-y_train = pd.read_csv('y_train.csv').values.ravel()
-y_test = pd.read_csv('y_test.csv').values.ravel()
+X_train = pd.read_csv('D:\\New folder\\DevOpsPOC\\DevOpsGeniAiPart\\CSV files\\X_train.csv')  # Updated path
+X_test = pd.read_csv('D:\\New folder\\DevOpsPOC\\DevOpsGeniAiPart\\CSV files\\X_test.csv')  # Updated path
+y_train = pd.read_csv('D:\\New folder\\DevOpsPOC\\DevOpsGeniAiPart\\CSV files\\y_train.csv').values.ravel()  # Updated path
+y_test = pd.read_csv('D:\\New folder\\DevOpsPOC\\DevOpsGeniAiPart\\CSV files\\y_test.csv').values.ravel()  # Updated path
 
 # Train the model
 model = RandomForestClassifier(n_estimators=100, random_state=42)
