@@ -1,28 +1,27 @@
-import joblib
+import pickle
 import sys
-import numpy as np
-import pandas as pd
 
-# Load the model and scaler
-model = joblib.load('pipeline_predictor.pkl')
-scaler = joblib.load('scaler.pkl')
+def load_model(model_path):
+    with open(model_path, 'rb') as file:
+        model = pickle.load(file)
+    return model
 
-# Example features for the new pipeline run
-num_commits = int(sys.argv[1])
-num_tests = int(sys.argv[2])
-test_pass_rate = float(sys.argv[3])
-previous_build_result = int(sys.argv[4])
-lines_of_code_changed = int(sys.argv[5])
+def predict_success(model, features):
+    # Assuming features are passed as a space-separated string
+    features = [float(x) for x in features.split()]
+    prediction = model.predict([features])
+    return prediction[0]
 
-# Prepare feature array
-features = np.array([[num_commits, num_tests, test_pass_rate, previous_build_result, lines_of_code_changed]])
-
-# Scale features
-features = scaler.transform(features)
-
-# Predict
-prediction = model.predict(features)
-if prediction[0] == 1:
-    print("The pipeline is predicted to succeed.")
-else:
-    print("The pipeline is predicted to fail.")
+if __name__ == "__main__":
+    model_path = 'D:\\New folder\\DevOpsPOC\\DevOpsGeniAiPart\\CSV files\\pipeline_predictor.pkl'
+    features = sys.argv[1]  # Features should be passed as a command line argument
+    
+    model = load_model(model_path)
+    result = predict_success(model, features)
+    
+    if result == 1:
+        print("The pipeline is expected to succeed.")
+        sys.exit(0)
+    else:
+        print("The pipeline is expected to fail.")
+        sys.exit(1)
