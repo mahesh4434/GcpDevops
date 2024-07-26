@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import os
 
+
 # Use path from Jenkins workspace
 data_path = os.path.join(os.getcwd(), 'pipeline_data.csv')
 
