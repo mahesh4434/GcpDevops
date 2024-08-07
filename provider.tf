@@ -5,7 +5,7 @@ provider "google" {
 }
 
 data "google_secret_manager_secret" "credentials" {
-  secret_id = "my-secret-name"  # Replace with your secret name
+  secret_id = "GCPSecret"
 }
 
 data "google_secret_manager_secret_version" "credentials" {
