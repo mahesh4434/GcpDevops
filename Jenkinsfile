@@ -6,8 +6,6 @@ pipeline {
         PATH = "$PATH;C:\\terraform"
         LOG_FILE_PATH = 'D:\\New folder\\Logs\\pipeline_log.txt'
         HUGGINGFACE_API_URL = 'https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-R1'
-        // Hardcoded Hugging Face API Token
-    
     }
     stages {
         stage('Checkout SCM') {
@@ -68,52 +66,53 @@ pipeline {
                         writeFile file: env.LOG_FILE_PATH, text: "[${new Date()}] Starting AI analysis...\n", append: true
                         def pipelineCode = readFile('Jenkinsfile')
                         
-                        // Using the hardcoded API token
-                        def response = httpRequest(
-                            acceptType: 'APPLICATION_JSON',
-                            contentType: 'APPLICATION_JSON',
-                            customHeaders: [[name: 'Authorization', value: "Bearer ${API_TOKEN}"]],
-                            httpMode: 'POST',
-                            requestBody: """
-                            {
-                                "inputs": "Analyze this Jenkins pipeline for potential issues. Consider the following aspects: 
-                                1. Syntax errors
-                                2. Security vulnerabilities
-                                3. Configuration errors
-                                4. Best practices
-                                5. Resource conflicts
-                                Pipeline code: ${pipelineCode}",
-                                "parameters": {
-                                    "max_length": 700,
-                                    "temperature": 0.5,
-                                    "top_p": 0.9
+                        withCredentials([string(credentialsId: 'huggingface-api-token', variable: 'API_TOKEN')]) {
+                            def response = httpRequest(
+                                acceptType: 'APPLICATION_JSON',
+                                contentType: 'APPLICATION_JSON',
+                                customHeaders: [[name: 'Authorization', value: "Bearer ${API_TOKEN}"]],
+                                httpMode: 'POST',
+                                requestBody: """
+                                {
+                                    "inputs": "Analyze this Jenkins pipeline for potential issues. Consider the following aspects: 
+                                    1. Syntax errors
+                                    2. Security vulnerabilities
+                                    3. Configuration errors
+                                    4. Best practices
+                                    5. Resource conflicts
+                                    Pipeline code: ${pipelineCode}",
+                                    "parameters": {
+                                        "max_length": 700,
+                                        "temperature": 0.5,
+                                        "top_p": 0.9
+                                    }
+                                }""",
+                                url: env.HUGGINGFACE_API_URL,
+                                timeout: 30,
+                                validResponseCodes: '200:499'
+                            )
+
+                            def logEntry = """
+                            [${new Date()}] API Request Details:
+                            - Status Code: ${response.status}
+                            - Response: ${response.content}
+                            """
+                            writeFile file: env.LOG_FILE_PATH, text: logEntry + "\n", append: true
+
+                            if (response.status == 200) {
+                                def analysis = readJSON text: response.content
+                                def generatedText = analysis[0].generated_text.toLowerCase()
+                                 
+                                def warningKeywords = ['error', 'warning', 'issue', 'vulnerability', 'conflict', 'problem']
+                                def foundIssues = warningKeywords.any { keyword -> generatedText.contains(keyword) }
+                                 
+                                if (foundIssues) {
+                                    writeFile file: env.LOG_FILE_PATH, text: "[${new Date()}] AI Prediction: Potential issues detected\n", append: true
+                                    error("AI analysis detected potential issues - high failure probability")
                                 }
-                            }""",
-                            url: env.HUGGINGFACE_API_URL,
-                            timeout: 30,
-                            validResponseCodes: '200:499'
-                        )
-
-                        def logEntry = """
-                        [${new Date()}] API Request Details:
-                        - Status Code: ${response.status}
-                        - Response: ${response.content}
-                        """
-                        writeFile file: env.LOG_FILE_PATH, text: logEntry + "\n", append: true
-
-                        if (response.status == 200) {
-                            def analysis = readJSON text: response.content
-                            def generatedText = analysis[0].generated_text.toLowerCase()
-                             
-                            def warningKeywords = ['error', 'warning', 'issue', 'vulnerability', 'conflict', 'problem']
-                            def foundIssues = warningKeywords.any { keyword -> generatedText.contains(keyword) }
-                             
-                            if (foundIssues) {
-                                writeFile file: env.LOG_FILE_PATH, text: "[${new Date()}] AI Prediction: Potential issues detected\n", append: true
-                                error("AI analysis detected potential issues - high failure probability")
+                            } else {
+                                writeFile file: env.LOG_FILE_PATH, text: "[${new Date()}] API request failed. Status: ${response.status}\n", append: true
                             }
-                        } else {
-                            writeFile file: env.LOG_FILE_PATH, text: "[${new Date()}] API request failed. Status: ${response.status}\n", append: true
                         }
 
                         writeFile file: env.LOG_FILE_PATH, text: "[${new Date()}] Prediction: All checks passed - high success probability\n", append: true
@@ -126,6 +125,23 @@ pipeline {
             }
         }
 
+        stage('Initializing Terraform') {
+            steps {
+                script {
+                    try {
+                        withCredentials([file(credentialsId: 'gcp-service-account-key', variable: 'GOOGLE_CREDENTIALS')]) {
+                            withEnv(["GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_CREDENTIALS}"]) {
+                                bat 'terraform init -reconfigure'
+                            }
+                        }
+                        writeFile file: env.LOG_FILE_PATH, text: "[${new Date()}] Terraform initialization completed successfully.\n", append: true
+                    } catch (Exception e) {
+                        writeFile file: env.LOG_FILE_PATH, text: "[${new Date()}] Terraform initialization failed. Error: ${e.message}\n", append: true
+                        error("Stopping pipeline due to error in Terraform initialization.")
+                    }
+                }
+            }
+        }
     }
     post {
         always {
