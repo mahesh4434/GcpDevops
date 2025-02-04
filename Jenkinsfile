@@ -1,6 +1,5 @@
 pipeline {
     agent any
-
     environment {
         GOOGLE_PROJECT_ID = 'devopsgkestandardproject'
         GOOGLE_COMPUTE_ZONE = 'us-central1-a'
@@ -8,7 +7,6 @@ pipeline {
         LOG_FILE_PATH = 'D:\\New folder\\Logs\\pipeline_log.txt'
         HUGGINGFACE_API_URL = 'https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-R1'
     }
-
     stages {
         stage('Checkout SCM') {
             steps {
@@ -16,9 +14,8 @@ pipeline {
                     try {
                         checkout([$class: 'GitSCM', 
                             branches: [[name: '*/main']], 
-                            userRemoteConfigs: [[
-                                url: 'https://github.com/mahesh4434/GcpDevops.git'
-                            ]])
+                            userRemoteConfigs: [[url: 'https://github.com/mahesh4434/GcpDevops.git']]
+                        ])
                         writeFile file: env.LOG_FILE_PATH, text: "[${new Date()}] Checkout SCM stage completed successfully.\n", append: true
                     } catch (Exception e) {
                         writeFile file: env.LOG_FILE_PATH, text: "[${new Date()}] Checkout SCM stage failed. Error: ${e.message}\n", append: true
@@ -128,25 +125,7 @@ pipeline {
             }
         }
 
-        stage('Initializing Terraform') {
-            steps {
-                script {
-                    try {
-                        withCredentials([file(credentialsId: 'gcp-service-account-key', variable: 'GOOGLE_CREDENTIALS')]) {
-                            withEnv(["GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_CREDENTIALS}"]) {
-                                bat 'terraform init -reconfigure'
-                            }
-                        }
-                        writeFile file: env.LOG_FILE_PATH, text: "[${new Date()}] Terraform initialization completed successfully.\n", append: true
-                    } catch (Exception e) {
-                        writeFile file: env.LOG_FILE_PATH, text: "[${new Date()}] Terraform initialization failed. Error: ${e.message}\n", append: true
-                        error("Stopping pipeline due to error in Terraform initialization.")
-                    }
-                }
-            }
-        }
     }
-
     post {
         always {
             echo "Pipeline completed. Logs have been saved to ${env.LOG_FILE_PATH}"
